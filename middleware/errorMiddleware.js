@@ -6,7 +6,30 @@ const handleCastErrorDB = err => {
 };
 
 const handleDuplicateFieldsDB = err => {
-    const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+    // If we have key/value, check if it's the email field
+    if (err.keyValue && err.keyValue.email) {
+        return new AppError('This email ID already exists. Please use another email or log in!', 400);
+    }
+    
+    // Fallback for older mongo formats without keyValue but with "email_1" in message
+    if ((err.errmsg && err.errmsg.includes('index: email_1')) || (err.message && err.message.includes('index: email_1'))) {
+        return new AppError('This email ID already exists. Please use another email or log in!', 400);
+    }
+
+    let value = 'unknown';
+    
+    if (err.errmsg) {
+        const match = err.errmsg.match(/(["'])(\\?.)*?\1/);
+        if (match) value = match[0];
+    } else if (err.message) {
+        const match = err.message.match(/(["'])(\\?.)*?\1/);
+        if (match) value = match[0];
+    }
+    
+    if (value === 'unknown' && err.keyValue) {
+        value = Object.values(err.keyValue).map(v => `"${v}"`).join(', ');
+    }
+
     const message = `Duplicate field value: ${value}. Please use another value!`;
     return new AppError(message, 400);
 };
