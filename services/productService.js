@@ -13,6 +13,10 @@ const getAllProducts = async (city) => {
     return await Product.find({}).populate('farmerId');
 };
 
+const getProductById = async (productId) => {
+    return await Product.findById(productId).populate('farmerId');
+};
+
 const getProductsByFarmer = async (farmerId) => {
     return await Product.find({ farmerId: farmerId });
 };
@@ -33,6 +37,7 @@ const deleteProduct = async (productId) => {
 module.exports = {
     createProduct,
     getAllProducts,
+    getProductById,
     getProductsByFarmer,
     updateProduct,
     deleteProduct

@@ -1,4 +1,3 @@
-// models/Product.js
 const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
@@ -12,9 +11,11 @@ const ProductSchema = new mongoose.Schema({
     imageUrl: { type: String, default: null },
 
     // --- NEW FIELD ---
-    quantity: { type: Number, required: true, default: 1 }, // e.g., 50 (kg)
+    quantity: { type: Number, required: true, default: 1 }, 
     
     isImperfect: { type: Boolean, default: false },
+    averageRating: { type: Number, default: 0 },
+    numReviews: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
 });
 

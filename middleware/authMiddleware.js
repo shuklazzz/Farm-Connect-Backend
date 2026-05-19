@@ -46,7 +46,12 @@ const optionalProtect = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
             req.user = await User.findById(decoded.userId).select('-password');
         } catch (error) {
-            console.error("Optional Auth Error:", error);
+            // Don't log full stack trace for expired tokens to keep console clean
+            if (error.name === 'TokenExpiredError') {
+                console.warn("Optional Auth: Token expired for a guest request.");
+            } else {
+                console.error("Optional Auth Error:", error.message);
+            }
             // Don't fail, just continue as guest
         }
     }

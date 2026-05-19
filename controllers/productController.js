@@ -75,9 +75,22 @@ const deleteProduct = async (req, res) => {
     }
 };
 
+const getProductById = async (req, res) => {
+    try {
+        const product = await productService.getProductById(req.params.productId);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching product", error: error.message });
+    }
+};
+
 module.exports = {
     createProduct,
     getAllProducts,
+    getProductById,
     getFarmerProducts,
     updateProduct,
     deleteProduct
