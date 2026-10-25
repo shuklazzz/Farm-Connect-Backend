@@ -19,6 +19,22 @@ const initSocket = (server) => {
             console.log(`[Socket.io] 👨‍🌾 Farmer ${farmerId} registered for live notifications.`);
         });
 
+        // Buyer joins tracking room for an order
+        socket.on('join_tracking_room', (orderId) => {
+            socket.join(`tracking_${orderId}`);
+            console.log(`[Socket.io] 🚚 Buyer joined tracking room for order ${orderId}`);
+        });
+
+        // Farmer sends location update
+        socket.on('farmer_location_update', (data) => {
+            // data should contain { orderId, location: { lat, lng } }
+            if (data.orderId && data.location) {
+                // Broadcast to anyone in the tracking room for this order
+                io.to(`tracking_${data.orderId}`).emit('delivery_location_update', data.location);
+                console.log(`[Socket.io] 📍 Location update for order ${data.orderId}: ${data.location.lat}, ${data.location.lng}`);
+            }
+        });
+
         socket.on('disconnect', () => {
             console.log(`[Socket.io] 🔌 Client disconnected: ${socket.id}`);
         });

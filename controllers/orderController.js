@@ -143,7 +143,7 @@ exports.getFarmerAnalytics = async (req, res) => {
         const orders = await Order.find({ 
             farmerId, 
             status: { $ne: 'cancelled' } 
-        });
+        }).populate('buyerId', 'location');
 
         const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
         const totalOrders = orders.length;
@@ -167,14 +167,15 @@ exports.getFarmerAnalytics = async (req, res) => {
             sales: salesData[date]
         }));
 
-        // 3. Top Selling Products with Unit
+        // 3. Top Selling Products with Unit and Revenue
         const productSales = {};
         orders.forEach(order => {
             order.items.forEach(item => {
                 if (!productSales[item.productName]) {
-                    productSales[item.productName] = { quantity: 0, unit: item.unit };
+                    productSales[item.productName] = { quantity: 0, unit: item.unit, revenue: 0 };
                 }
                 productSales[item.productName].quantity += item.quantity;
+                productSales[item.productName].revenue += item.subtotal;
             });
         });
 
@@ -182,17 +183,35 @@ exports.getFarmerAnalytics = async (req, res) => {
             .map(name => ({ 
                 name, 
                 value: productSales[name].quantity, 
-                unit: productSales[name].unit 
+                unit: productSales[name].unit,
+                revenue: productSales[name].revenue // Added for topEarningCrop
             }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 5); // Top 5
+
+        // Determine Top Earning Crop
+        let topEarningCrop = null;
+        if (topProducts.length > 0) {
+            topEarningCrop = [...topProducts].sort((a, b) => b.revenue - a.revenue)[0];
+        }
+
+        // 4. Extract Buyer Locations for Map
+        const buyerLocations = orders
+            .filter(o => o.buyerId && o.buyerId.location && o.buyerId.location.coordinates && o.buyerId.location.coordinates.lat)
+            .map(o => ({
+                lat: o.buyerId.location.coordinates.lat,
+                lng: o.buyerId.location.coordinates.lng,
+                orderAmount: o.totalAmount
+            }));
 
         res.json({
             totalRevenue,
             weeklyRevenue,
             totalOrders,
             chartData,
-            topProducts
+            topProducts,
+            topEarningCrop,
+            buyerLocations
         });
 
     } catch (error) {
